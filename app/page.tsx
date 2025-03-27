@@ -1,101 +1,133 @@
-import Image from "next/image";
+// app/page.tsx
+"use client";
 
-return function Home() {
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import AppleWatchData from "./components/AppleWatchData";
+import BodyBattery from "./components/BodyBattery";
+import BeforeAfterSlider from "./components/BeforeAfterSlider";
+
+// Utility function to generate a random number within a range
+const randomNumber = (min: number, max: number): number => {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
+// Mock data generation functions
+const generateMockHeartRate = (time: number, scenario: string): number => {
+  let baseRate = 70; // Resting heart rate
+  if (scenario === "exercising") {
+    baseRate = 120; // Elevated heart rate during exercise
+  } else if (scenario === "after-quitting") {
+    baseRate = 60; // Lower heart rate after quitting
+  }
+  // Simulate a slight variation around the base rate
+  const variation = Math.sin(time / 10) * 5;
+  return baseRate + variation + randomNumber(-2, 2);
+};
+
+const generateMockStressLevel = (time: number, scenario: string): number => {
+  let baseStress = 40; // Moderate stress level
+  if (scenario === "stressed") {
+    baseStress = 70; // High stress level
+  } else if (scenario === "after-quitting") {
+    baseStress = 20; // Lower stress level after quitting
+  }
+  // Simulate a slight variation around the base stress
+  const variation = Math.cos(time / 10) * 10;
+  return baseStress + variation + randomNumber(-5, 5);
+};
+
+const generateMockSleepQuality = (time: number, scenario: string): number => {
+  let baseQuality = 70; // Good sleep quality
+  if (scenario === "poor-sleep") {
+    baseQuality = 50; // Poor sleep quality
+  } else if (scenario === "after-quitting") {
+    baseQuality = 90; // Improved sleep quality after quitting
+  }
+  // Simulate a slight variation around the base quality
+  const variation = Math.sin(time / 5) * 5;
+  return baseQuality + variation + randomNumber(-3, 3);
+};
+
+export default function Home() {
+  const [time, setTime] = useState(0);
+  const [scenario, setScenario] = useState("starting"); // Scenarios: starting, exercising, stressed, after-quitting
+  const [heartRate, setHeartRate] = useState(generateMockHeartRate(time, scenario));
+  const [stressLevel, setStressLevel] = useState(generateMockStressLevel(time, scenario));
+  const [sleepQuality, setSleepQuality] = useState(generateMockSleepQuality(time, scenario));
+  const [bodyBattery, setBodyBattery] = useState(50);
+  const [sliderPosition, setSliderPosition] = useState(50);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime((prevTime) => prevTime + 1);
+      setHeartRate(generateMockHeartRate(time, scenario));
+      setStressLevel(generateMockStressLevel(time, scenario));
+      setSleepQuality(generateMockSleepQuality(time, scenario));
+
+      // Simulate Body Battery increasing over time when "after-quitting"
+      if (scenario === "after-quitting" && bodyBattery < 100) {
+        setBodyBattery((prevBattery) => Math.min(prevBattery + 0.5, 100));
+      }
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [time, scenario, bodyBattery]);
+
+  // Mock data for BeforeAfterSlider
+  const beforeData = {
+    heartRate: 85,
+    lungCapacity: 4,
+    energyLevels: 30
+  };
+
+  const afterData = {
+    heartRate: 70,
+    lungCapacity: 5.5,
+    energyLevels: 80
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row items-center justify-center p-4">
+      {/* Apple Watch Data */}
+      <div className="md:w-1/2 p-4">
+        <AppleWatchData
+          heartRate={heartRate}
+          stressLevel={stressLevel}
+          sleepQuality={sleepQuality}
         />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Body Battery Visualization and Before/After Slider */}
+      <div className="md:w-1/2 p-4 flex flex-col items-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1 }}
+        >
+          <BodyBattery level={bodyBattery} />
+        </motion.div>
+
+        <div className="mt-8 w-full">
+          <BeforeAfterSlider beforeData={beforeData} afterData={afterData} />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Scenario Selection - For Testing Purposes */}
+        <div className="mt-4">
+          <label htmlFor="scenario" className="block text-gray-700 text-sm font-bold mb-2">Scenario:</label>
+          <select
+            id="scenario"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            value={scenario}
+            onChange={(e) => setScenario(e.target.value)}
+          >
+            <option value="starting">Starting</option>
+            <option value="exercising">Exercising</option>
+            <option value="stressed">Stressed</option>
+            <option value="after-quitting">After Quitting</option>
+          </select>
+        </div>
+      </div>
     </div>
   );
 }
